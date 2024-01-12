@@ -10,13 +10,13 @@ It's probably easier for you to use Thunderstore - but if you don't want to use 
 
 ## Just here to download the mods?
 
-Head to [the releases page](/releases) and download the latest release of `lethal-mod-installer.exe`.
+Head to [the releases page](https://github.com/AdamHebby/python-lethal-company-mod-installer/releases) and download the latest release of `lethal-mod-installer.exe`.
 
 ## How to use - Server owner
 
 ### Update Settings
 ```bash
-git clone git@github.com:AdamHebby/python-lethal-company-mod-installer.git
+git clone https://github.com/AdamHebby/python-lethal-company-mod-installer.git
 cd python-lethal-company-mod-installer
 pip install -r requirements.txt
 python3 update-settings.py
