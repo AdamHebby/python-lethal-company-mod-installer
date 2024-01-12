@@ -1,4 +1,4 @@
-import requests, zipfile, io, os, sys, shutil, tempfile, time, queue, yaml
+import requests, zipfile, io, os, sys, shutil, tempfile, time, queue, yaml, concurrent.futures
 
 # Ensure program is running
 if getattr(sys, 'frozen', False):
@@ -76,6 +76,23 @@ try:
     download(settings["settings"]["configZipUrl"], tempDirConf)
     copyTree(tempDirConf + "/config", LethalCompanyOutputFolder + "/BepInEx/config")
 
+    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+        results = []
+        for modName in settings["settings"]["mods"]:
+            # vars
+            modconfig    = settings["settings"]["mods"][modName]
+            version      = modconfig["version"]
+            downloadUrl  = modDownloadUrl + modName + "/" + version + "/"
+            downloadPath = tempDir + modName.split("/")[1]
+
+            # download and extract
+            print("Downloading " + modName + " " + version)
+            results.append(executor.submit(download, downloadUrl, downloadPath))
+
+        concurrent.futures.wait(results)
+
+    print("Downloaded all mods, copying files...")
+
     # Loop through all configured mods, download ZIP, extract, copy files
     for modName in settings["settings"]["mods"]:
         # vars
@@ -83,10 +100,6 @@ try:
         version      = modconfig["version"]
         downloadUrl  = modDownloadUrl + modName + "/" + version + "/"
         downloadPath = tempDir + modName.split("/")[1]
-
-        # download and extract
-        print("Downloading " + modName + " " + version)
-        download(downloadUrl, downloadPath)
 
         # copy files
         for pmap in modconfig["pathmap"]:
@@ -104,6 +117,10 @@ try:
 
     if os.path.exists(tempDirConf):
         shutil.rmtree(tempDirConf)
+
+    # Launch Lethal Company
+    print("Launching Lethal Company...")
+    os.startfile(LethalCompanyOutputFolder + "/Lethal Company.exe")
 
 except Exception as e:
     print("Error!")
