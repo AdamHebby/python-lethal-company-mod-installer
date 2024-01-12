@@ -34,7 +34,6 @@ try:
 
         if currentVersion != latestVersion:
             print("Updating " + modName + " from " + currentVersion + " to " + latestVersion)
-            currentVersion = latestVersion
             settings["settings"]["mods"][modName]["version"] = latestVersion
 
     # save settings.yaml
