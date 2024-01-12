@@ -43,11 +43,11 @@ try:
         aKey = winreg.OpenKey(aReg, r'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 1966720')
         LethalCompanyOutputFolder = winreg.QueryValueEx(aKey, "InstallLocation")[0]
 
-    # Exit if Lethal Company is not installed
+    # exit if Lethal Company is not installed
     if LethalCompanyOutputFolder == "" or not os.path.exists(LethalCompanyOutputFolder):
         print("Lethal Company install folder not found: " + LethalCompanyOutputFolder)
         input()
-        exit()
+        sys.exit()
 
     print("Lethal Company found at " + LethalCompanyOutputFolder)
 
@@ -57,6 +57,12 @@ try:
     if input("Download latest settings.yaml? (y/n) [n]: ") == "y":
         print("Downloading settings.yaml")
         r = requests.get(settings["settings"]["remoteSettingsUrl"], allow_redirects=True)
+
+        if r.status_code != 200:
+            print("Error downloading settings.yaml")
+            input()
+            sys.exit()
+
         open(Current_Path + "/settings.yaml", 'wb').write(r.content)
         settings = yaml.load(open(Current_Path + "/settings.yaml", "r"), Loader=yaml.FullLoader)
 
@@ -69,6 +75,7 @@ try:
     # Ensure directories exist
     makeCleanDirectory(tempDir)
     makeCleanDirectory(tempDirConf)
+    makeCleanDirectory(LethalCompanyOutputFolder + "/BepInEx")
     makeCleanDirectory(LethalCompanyOutputFolder + "/BepInEx/plugins")
     makeDirectory(LethalCompanyOutputFolder + "/BepInEx/config")
 
@@ -126,4 +133,4 @@ except Exception as e:
     print("Error!")
     print(e)
     input()
-    exit()
+    sys.exit()
