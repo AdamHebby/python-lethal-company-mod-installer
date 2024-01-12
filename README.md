@@ -16,7 +16,7 @@ Head to [the releases page](https://github.com/AdamHebby/python-lethal-company-m
 
 ### Update Settings
 ```bash
-git clone git@github.com:AdamHebby/python-lethal-company-mod-installer.git
+git clone https://github.com/AdamHebby/python-lethal-company-mod-installer.git
 cd python-lethal-company-mod-installer
 pip install -r requirements.txt
 python3 update-settings.py
