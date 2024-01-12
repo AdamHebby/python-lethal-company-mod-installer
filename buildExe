@@ -14,4 +14,5 @@ sudo rm -rf __pycache__ build dist && \
     sudo chown -R $USER:$USER dist/ && \
     cp settings.yaml dist/ && \
     chmod 666 dist/settings.yaml && \
-    zip -r LethalCompanyModInstaller.zip dist
+    rm -f LethalCompanyModInstaller.zip && \
+    zip -Djr LethalCompanyModInstaller.zip dist/*
