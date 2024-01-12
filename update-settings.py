@@ -29,6 +29,12 @@ try:
         print("Checking " + modName)
         modconfig      = settings["settings"]["mods"][modName]
         page           = requests.get(pageUrl + modName, allow_redirects=True, headers={"User-Agent": userAgent})
+
+        if page.status_code != 200:
+            print("Error! " + page.status_code)
+            print("Carrying on...")
+            continue
+
         currentVersion = modconfig["version"]
         latestVersion  = re.search(r'' + re.escape(baseUrl + modName) + r'\/(.*?)\/"', page.content.decode("utf-8")).group(1)
 
