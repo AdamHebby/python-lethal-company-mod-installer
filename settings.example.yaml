@@ -1,0 +1,88 @@
+settings:
+  remoteSettingsUrl: https://example.org/settings.yaml
+  configZipUrl: https://example.org/config.zip
+  downloadUserAgent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36
+  modDownloadUrl: https://thunderstore.io/package/download/
+  modPageUrl: https://thunderstore.io/c/lethal-company/p/
+  mods:
+    AinaVT/LethalConfig:
+      pathmap:
+      - plugins:BepInEx/plugins
+      version: 1.3.4
+    BepInEx/BepInExPack:
+      pathmap:
+      - BepInExPack:/
+      version: 5.4.2100
+    Drakorle/MoreItems:
+      pathmap:
+      - BepInEx/plugins:BepInEx/plugins
+      version: 1.0.2
+    Gemumoddo/BadAssCompany:
+      pathmap:
+      - plugins:BepInEx/plugins
+      version: 1.1.0
+    Gemumoddo/LethalEmotesAPI:
+      pathmap:
+      - LethalEmotesApi:BepInEx/plugins
+      version: 1.1.12
+    Jordo/NeedyCats:
+      pathmap:
+      - BepInEx/plugins:BepInEx/plugins
+      version: 1.1.1
+    RugbugRedfern/Skinwalkers:
+      pathmap:
+      - BepInEx/plugins:BepInEx/plugins
+      version: 2.0.6
+    Rune580/LethalCompany_InputUtils:
+      pathmap:
+      - LethalCompanyInputUtils:BepInEx/plugins
+      version: 0.4.4
+    Suskitech/AlwaysHearActiveWalkies:
+      pathmap:
+      - AlwaysHearWalkie.dll:BepInEx/plugins
+      version: 1.4.4
+    anormaltwig/LateCompany:
+      pathmap:
+      - BepInEx/plugins:BepInEx/plugins
+      version: 1.0.10
+    atg/FreeJester:
+      pathmap:
+      - FreeJester:BepInEx/plugins
+      version: 1.0.3
+    nodelll/kruumys_FixResolution:
+      pathmap:
+      - FixResolution.dll:BepInEx/plugins
+      version: 1.0.0
+    notnotnotswipez/MoreCompany:
+      pathmap:
+      - BepInEx/plugins:BepInEx/plugins
+      version: 1.7.4
+    sunnobunno/YippeeMod:
+      pathmap:
+      - YippeeMod.dll:BepInEx/plugins
+      - yippeesound:BepInEx/plugins
+      version: 1.2.3
+    tinyhoot/ShipLoot:
+      pathmap:
+      - plugins/ShipLoot:BepInEx/plugins
+      version: 1.0.0
+    togglemybits/Strange_Objects:
+      pathmap:
+      - BepInEx/plugins:BepInEx/plugins
+      version: 1.2.3
+    vasanex/ItemQuickSwitch:
+      pathmap:
+      - BepInEx/plugins:BepInEx/plugins
+      version: 1.1.0
+    x753/Mimics:
+      pathmap:
+      - BepInEx/plugins:BepInEx/plugins
+      version: 2.3.2
+    x753/More_Suits:
+      pathmap:
+      - BepInEx/plugins:BepInEx/plugins
+      version: 1.4.1
+    xCeezy/LethalEscape:
+      pathmap:
+      - BepInEx/plugins/LethalEscape:BepInEx/plugins
+      version: 0.8.5

@@ -1,0 +1,17 @@
+#!/bin/bash
+
+sudo rm -rf __pycache__ build dist && \
+    docker run -it -v "$(pwd):/src/" cdrx/pyinstaller-windows:python3 "\
+        apt-get update -y && \
+        apt-get install -y wget && \
+        pip install -r requirements.txt && \
+        pip install pyinstaller-versionfile && \
+        wine 'C:\Python37\Scripts\create-version-file' data/lethal-mod-installer-versionfile.yaml --outfile /tmp/lethal-mod-installer-versionfile && \
+        wine 'C:\Python37\Scripts\create-version-file' data/update-settings-versionfile.yaml --outfile /tmp/update-settings-versionfile && \
+        pyinstaller lethal-mod-installer.py --version-file=/tmp/lethal-mod-installer-versionfile --clean -F --hidden-import=queue --hidden-import=winreg && \
+        pyinstaller update-settings.py --version-file=/tmp/update-settings-versionfile --clean -F --hidden-import=queue
+    " && \
+    sudo chown -R $USER:$USER dist/ && \
+    cp settings.yaml dist/ && \
+    chmod 666 dist/settings.yaml && \
+    zip -r LethalCompanyModInstaller.zip dist
