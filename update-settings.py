@@ -15,7 +15,6 @@ try:
 
     if not os.path.isfile(settingsPath):
         print("settings.yaml not found")
-        input()
         exit()
 
     settings = yaml.load(open(settingsPath, "r"), Loader=yaml.FullLoader)
@@ -51,5 +50,4 @@ try:
 except Exception as e:
     print("Error!")
     print(e)
-    input()
     exit()
