@@ -52,19 +52,15 @@ try:
     print("Lethal Company found at " + LethalCompanyOutputFolder)
 
     # Get settings
-    settings = yaml.load(open(Current_Path + "/settings.yaml", "r"), Loader=yaml.FullLoader)
+    print("Downloading settings.yaml")
+    r = requests.get("https://lcmods.ge3kingit.net.nz/LCMods/settings.yaml", allow_redirects=True)
 
-    if input("Download latest settings.yaml? (y/n) [n]: ") == "y":
-        print("Downloading settings.yaml")
-        r = requests.get(settings["settings"]["remoteSettingsUrl"], allow_redirects=True)
+    if r.status_code != 200:
+        print("Error downloading settings.yaml")
+        input()
+        sys.exit()
 
-        if r.status_code != 200:
-            print("Error downloading settings.yaml")
-            input()
-            sys.exit()
-
-        open(Current_Path + "/settings.yaml", 'wb').write(r.content)
-        settings = yaml.load(open(Current_Path + "/settings.yaml", "r"), Loader=yaml.FullLoader)
+    settings = yaml.load(r.content, Loader=yaml.FullLoader)
 
     # Set variables
     modDownloadUrl = settings["settings"]["modDownloadUrl"]

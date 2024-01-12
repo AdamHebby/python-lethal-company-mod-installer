@@ -8,17 +8,6 @@ else:
 try:
     settings = yaml.load(open(Current_Path + "/settings.yaml", "r"), Loader=yaml.FullLoader)
 
-    if input("Download latest settings.yaml? (y/n) [n]: ") == "y":
-        print("Downloading settings.yaml")
-        r = requests.get(settings["settings"]["remoteSettingsUrl"], allow_redirects=True)
-        open(Current_Path + "/settings.yaml", 'wb').write(r.content)
-        settings = yaml.load(open(Current_Path + "/settings.yaml", "r"), Loader=yaml.FullLoader)
-
-    if input("Automatically check mod versions and update local copy of settings.yaml? (y/n) [n]: ") != "y":
-        print("Done")
-        input()
-        exit()
-
     # load settings.yaml
     baseUrl   = settings["settings"]["modDownloadUrl"]
     pageUrl   = settings["settings"]["modPageUrl"]

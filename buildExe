@@ -11,8 +11,4 @@ sudo rm -rf __pycache__ build dist && \
         pyinstaller lethal-mod-installer.py --version-file=/tmp/lethal-mod-installer-versionfile --clean -F --hidden-import=queue --hidden-import=winreg && \
         pyinstaller update-settings.py --version-file=/tmp/update-settings-versionfile --clean -F --hidden-import=queue
     " && \
-    sudo chown -R $USER:$USER dist/ && \
-    cp settings.yaml dist/ && \
-    chmod 666 dist/settings.yaml && \
-    rm -f LethalCompanyModInstaller.zip && \
-    zip -Djr LethalCompanyModInstaller.zip dist/*
+    sudo chown -R $USER:$USER dist/
