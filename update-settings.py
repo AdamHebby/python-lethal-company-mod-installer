@@ -6,7 +6,19 @@ else:
     Current_Path = str(os.path.dirname(__file__))
 
 try:
-    settings = yaml.load(open(Current_Path + "/settings.yaml", "r"), Loader=yaml.FullLoader)
+    # settings path is argv[1], ensure param is entered and file exists
+    settingsPath = ""
+    if len(sys.argv) == 2:
+        settingsPath = sys.argv[1]
+    elif not os.path.isfile(sys.argv[1]):
+        settingsPath = os.path.join(Current_Path, "settings.yaml")
+
+    if not os.path.isfile(settingsPath):
+        print("settings.yaml not found")
+        input()
+        exit()
+
+    settings = yaml.load(open(settingsPath, "r"), Loader=yaml.FullLoader)
 
     # load settings.yaml
     baseUrl   = settings["settings"]["modDownloadUrl"]
@@ -25,7 +37,7 @@ try:
             currentVersion = latestVersion
 
     # save settings.yaml
-    with open(Current_Path + "/settings.yaml", "w") as f:
+    with open(settingsPath, "w") as f:
         yaml.dump(settings, f)
 
     print("Done")
