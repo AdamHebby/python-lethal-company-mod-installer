@@ -166,6 +166,9 @@ class ModDownload:
             copyTo   = LethalCompanyOutputFolder + "/" + copyMap[1]
 
             try:
+                if copyTo.endswith("/"):
+                    makeDirectory(copyTo)
+
                 if not os.path.isdir(copyFrom):
                     shutil.copy(copyFrom, copyTo)
                 else:
@@ -282,8 +285,9 @@ try:
 
     success("Verified Downloads, copying files...")
 
-    makeCleanDirectory(LethalCompanyOutputFolder + "/BepInEx")
+    makeDirectory(LethalCompanyOutputFolder + "/BepInEx")
     makeCleanDirectory(LethalCompanyOutputFolder + "/BepInEx/plugins")
+    makeDirectory(LethalCompanyOutputFolder + "/BepInEx/patchers")
     makeDirectory(LethalCompanyOutputFolder + "/BepInEx/config")
     copyTree(TEMP_DIR_CONF + "/config", LethalCompanyOutputFolder + "/BepInEx/config")
 
