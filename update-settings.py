@@ -26,8 +26,13 @@ try:
 
     for modName in settings["settings"]["mods"]:
         print("Checking " + modName)
-        modconfig      = settings["settings"]["mods"][modName]
-        page           = requests.get(pageUrl + modName, allow_redirects=True, headers={"User-Agent": userAgent})
+        modconfig = settings["settings"]["mods"][modName]
+
+        if "forcePin" in modconfig:
+            print("Skipping pinned version " + modconfig["forcePin"])
+            continue
+
+        page = requests.get(pageUrl + modName, allow_redirects=True, headers={"User-Agent": userAgent})
 
         if page.status_code != 200:
             print("Error! " + page.status_code)

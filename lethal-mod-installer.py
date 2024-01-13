@@ -61,6 +61,7 @@ try:
         sys.exit()
 
     settings = yaml.load(r.content, Loader=yaml.FullLoader)
+    # settings = yaml.load(open(os.path.join(Current_Path, "settings.yaml"), "r"), Loader=yaml.FullLoader)
 
     # Set variables
     modDownloadUrl = settings["settings"]["modDownloadUrl"]
@@ -88,6 +89,10 @@ try:
             downloadUrl  = modDownloadUrl + modName + "/" + version + "/"
             downloadPath = tempDir + modName.split("/")[1]
 
+            if "forcePin" in modconfig:
+                print("Forcing " + modName + " to " + modconfig["forcePin"])
+                downloadUrl = modconfig["forcePin"]
+
             # download and extract
             print("Downloading " + modName + " " + version)
             results.append(executor.submit(download, downloadUrl, downloadPath))
@@ -100,8 +105,6 @@ try:
     for modName in settings["settings"]["mods"]:
         # vars
         modconfig    = settings["settings"]["mods"][modName]
-        version      = modconfig["version"]
-        downloadUrl  = modDownloadUrl + modName + "/" + version + "/"
         downloadPath = tempDir + modName.split("/")[1]
 
         # copy files
@@ -115,6 +118,7 @@ try:
             else:
                 copyTree(copyFrom, copyTo)
 
+    print("All mods copied, cleaning up...")
     if os.path.exists(tempDir):
         shutil.rmtree(tempDir)
 
@@ -123,7 +127,7 @@ try:
 
     # Launch Lethal Company
     print("Launching Lethal Company...")
-    os.startfile(LethalCompanyOutputFolder + "/Lethal Company.exe")
+    os.startfile("steam://launch/1966720")
 
 except Exception as e:
     print("Error!")

@@ -9,6 +9,7 @@ sudo rm -rf __pycache__ build dist && \
         wine 'C:\Python37\Scripts\create-version-file' data/lethal-mod-installer-versionfile.yaml --outfile /tmp/lethal-mod-installer-versionfile && \
         wine 'C:\Python37\Scripts\create-version-file' data/update-settings-versionfile.yaml --outfile /tmp/update-settings-versionfile && \
         pyinstaller lethal-mod-installer.py --version-file=/tmp/lethal-mod-installer-versionfile --clean -F --hidden-import=queue --hidden-import=winreg -i data/icon.ico && \
-        pyinstaller update-settings.py --version-file=/tmp/update-settings-versionfile --clean -F --hidden-import=queue -i data/icon.ico
-    " && \
+        pyinstaller update-settings.py --version-file=/tmp/update-settings-versionfile --clean -F --hidden-import=queue -i data/icon.ico && \
+        cp settings.yaml dist" && \
+    sudo chmod 666 dist/settings.yaml && \
     sudo chown -R $USER:$USER dist/

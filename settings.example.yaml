@@ -8,10 +8,15 @@ settings:
       pathmap:
       - plugins:BepInEx/plugins
       version: 1.3.4
+    # BepInEx/BepInExPack:
+    #   pathmap:
+    #   - BepInExPack:/
+    #   version: 5.4.2100
     BepInEx/BepInExPack:
       pathmap:
-      - BepInExPack:/
-      version: 5.4.2100
+      - /:/
+      version: 5.4.22.0
+      forcePin: https://github.com/BepInEx/BepInEx/releases/download/v5.4.22/BepInEx_x64_5.4.22.0.zip
     Drakorle/MoreItems:
       pathmap:
       - BepInEx/plugins:BepInEx/plugins
