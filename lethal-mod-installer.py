@@ -216,8 +216,8 @@ try:
         input()
         sys.exit()
 
-    # settings = yaml.load(r.content, Loader=yaml.FullLoader)
-    settings = yaml.load(open(os.path.join(Current_Path, "settings.yaml"), "r"), Loader=yaml.FullLoader)
+    settings = yaml.load(r.content, Loader=yaml.FullLoader)
+    # settings = yaml.load(open(os.path.join(Current_Path, "settings.yaml"), "r"), Loader=yaml.FullLoader)
 
     userAgent = settings["settings"]["downloadUserAgent"]
 
