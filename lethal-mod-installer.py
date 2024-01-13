@@ -179,6 +179,7 @@ class ModDownload:
 
     def verify(self: any) -> bool:
         if not self.isComplete():
+            warning("Cannot verify " + self.fullModName + " - Incomplete")
             return False
 
         for pmap in self.modPathMap:
@@ -186,6 +187,7 @@ class ModDownload:
             copyFrom = TEMP_DIR + self.modName + "/" + copyMap[0]
 
             if not os.path.exists(copyFrom) or (os.path.isdir(copyFrom) and len(os.listdir(copyFrom)) == 0):
+                warning("Cannot verify " + self.fullModName + " - Missing or empty " + copyFrom)
                 return False
 
         return True
