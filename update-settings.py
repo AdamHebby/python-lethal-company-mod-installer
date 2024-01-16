@@ -1,9 +1,12 @@
-import requests, zipfile, io, os, sys, queue, yaml, re
+import os, sys, traceback
 
-if getattr(sys, 'frozen', False):
-    Current_Path = os.path.dirname(sys.executable)
-else:
-    Current_Path = str(os.path.dirname(__file__))
+from src.ModSettingPathMapper import ModSettingPathMapper
+from src.ModSetting import ModSetting
+from src.Settings import Settings
+from src.Version import Version
+from src.Utils import error, getCurrentDir, loadPotentiallyDodgyJson, info, success, cleanTempFiles
+
+Current_Path = getCurrentDir()
 
 try:
     # settings path is argv[1], ensure param is entered and file exists
@@ -13,46 +16,93 @@ try:
     elif not os.path.isfile(sys.argv[1]):
         settingsPath = os.path.join(Current_Path, "settings.yaml")
 
-    if not os.path.isfile(settingsPath):
-        print("settings.yaml not found")
-        exit()
+    settings = Settings.loadFromFile(settingsPath)
 
-    settings = yaml.load(open(settingsPath, "r"), Loader=yaml.FullLoader)
+    suggests: dict[str, ModSetting] = {}
 
-    # load settings.yaml
-    baseUrl   = settings["settings"]["modDownloadUrl"]
-    pageUrl   = settings["settings"]["modPageUrl"]
-    userAgent = settings["settings"]["downloadUserAgent"]
+    for mod in settings.modSettings:
+        info("Checking " + str(mod))
 
-    for modName in settings["settings"]["mods"]:
-        print("Checking " + modName)
-        modconfig = settings["settings"]["mods"][modName]
-
-        if "forcePin" in modconfig:
-            print("Skipping pinned version " + modconfig["forcePin"])
+        if mod.forcePin != None:
+            print("Skipping pinned version " + mod.forcePin)
             continue
 
-        page = requests.get(pageUrl + modName, allow_redirects=True, headers={"User-Agent": userAgent})
+        latestVersion  = mod.checkForNewVersion()
 
-        if page.status_code != 200:
-            print("Error! " + page.status_code)
-            print("Carrying on...")
+        if latestVersion != None:
+            success("New version available for " + mod.fullModName + " (" + str(latestVersion) + ")")
+            mod.setNewVersion(latestVersion)
+
+        mod.downloadNewVersion()
+        mod.modPathMap = []
+        ModSettingPathMapper.dumbExecute(mod)
+        mod.verifyThrow()
+        mod.applyNewVersion()
+
+        settings.setModSetting(mod)
+
+        info("Checking manifest for " + mod.fullModName)
+        # find manifest.json within mod folder
+        manifestPath = mod.findManifest()
+        if manifestPath == None:
+            error("Cannot find manifest.json for " + mod.fullModName)
             continue
 
-        currentVersion = modconfig["version"]
-        latestVersion  = re.search(r'' + re.escape(baseUrl + modName) + r'\/(.*?)\/"', page.content.decode("utf-8")).group(1)
+        try:
+            # Use subprocess.run with input and output pipes
+            manifest = loadPotentiallyDodgyJson(manifestPath)
 
-        if currentVersion != latestVersion:
-            print("Updating " + modName + " from " + currentVersion + " to " + latestVersion)
-            settings["settings"]["mods"][modName]["version"] = latestVersion
+            if manifest != None and "dependencies" in manifest:
+                for dep in manifest["dependencies"]:
+                    depParts = dep.split("-")
+                    author   = depParts[0]
+                    depName  = depParts[1]
+                    version  = depParts[2]
+                    fullName = author + "/" + depName
+
+                    existingDependency = settings.getModSetting(fullName)
+                    newModDependency   = ModSetting(fullName, Version(version), [])
+
+                    if existingDependency != None and existingDependency.modVersion.lt(newModDependency.modVersion):
+                        error(
+                            f'Newer version of Dependency {fullName} ({existingDependency.modVersion} -> {newModDependency.modVersion}) ' +
+                            f'for {mod.fullModName} found in manifest.json'
+                        )
+                        continue
+
+                    if fullName in suggests:
+                        suggests[fullName].modVersion = Version.max(newModDependency.modVersion, suggests[fullName].modVersion)
+                    else:
+                        suggests[fullName] = newModDependency
+
+        except KeyError as e:
+            error("Error loading manifest.json for " + mod.fullModName)
+            error("ERROR:" + e.args[0])
+
+        print("")
+
+    for suggest in suggests:
+        newMod = suggests[suggest]
+
+        newMod.download()
+
+        ModSettingPathMapper.dumbExecute(newMod)
+
+        newMod.verifyThrow()
+
+        success("Adding " + newMod.fullModName + " " + str(newMod.modVersion) + " to settings")
+        settings.setModSetting(newMod)
 
     # save settings.yaml
-    with open(settingsPath, "w") as f:
-        yaml.dump(settings, f)
+    settings.saveToFile(settingsPath)
 
-    print("Done")
+    cleanTempFiles()
+
+    success("Done")
 
 except Exception as e:
-    print("Error!")
-    print(e)
-    exit()
+    traceback.print_exc()
+
+    cleanTempFiles()
+
+    sys.exit()
