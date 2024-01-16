@@ -8,11 +8,31 @@ if [[ "$(docker images -q $DOCKER_IMAGE 2> /dev/null)" == "" ]]; then
     docker build -t $DOCKER_IMAGE .
 fi
 
-sudo rm -rf __pycache__ build dist && \
+# allow new tag to be passed to script
+if [ $# -eq 1 ]; then
+    NEW_TAG=$1
+else
+    TAG=$(git describe --tags --abbrev=0)
+    NEW_TAG=$(echo $TAG | awk -F. -v OFS=. '{$NF = $NF + 1;} 1')
+fi
+
+SCRIPT_NAME="lethal-mod-installer"
+EXE_NAME="$SCRIPT_NAME-$NEW_TAG.exe"
+
+sudo rm -rf __pycache__ build dist *.spec && \
+    mkdir dist && \
     docker run -it -v "$(pwd):/src/" $DOCKER_IMAGE "\
         pip install -r requirements.txt && \
-        wine 'C:\Python37\Scripts\create-version-file' data/lethal-mod-installer-versionfile.yaml --outfile /tmp/lethal-mod-installer-versionfile && \
-        pyinstaller lethal-mod-installer.py --version-file=/tmp/lethal-mod-installer-versionfile --clean -F --hidden-import=queue --hidden-import=winreg -i data/icon.ico && \
-        cp settings.yaml dist" && \
-    sudo chmod 666 dist/settings.yaml && \
-    sudo chown -R $USER:$USER dist/
+        wine 'C:\Python37\Scripts\create-version-file' \
+            data/$SCRIPT_NAME-versionfile.yaml \
+            --outfile /tmp/$SCRIPT_NAME-versionfile \
+            --version $NEW_TAG && \
+        pyinstaller $SCRIPT_NAME.py \
+            --version-file=/tmp/$SCRIPT_NAME-versionfile \
+            --clean -F \
+            --hidden-import=queue \
+            --hidden-import=winreg \
+            -i data/icon.ico \
+            --name $EXE_NAME" && \
+    sudo chown -R $USER:$USER dist/ && \
+    cd dist && sha256sum $EXE_NAME > shasum.txt
