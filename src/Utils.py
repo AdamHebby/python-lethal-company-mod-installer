@@ -127,7 +127,7 @@ def downloadZip(downloadUrl: str, path: str):
 
 def loadPotentiallyDodgyJson(path: str) -> dict | None:
     if getattr(sys, 'frozen', False):
-        return json.load(open(path, "r"))
+        return json.load(open(path, "r", encoding="utf-8-sig", errors="ignore"))
 
     try:
         result = subprocess.run(
