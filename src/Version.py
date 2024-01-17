@@ -25,6 +25,9 @@ class Version:
         if len(version) > 3:
             self.build = int(version[3])
 
+    def getFullVersion(self: Version) -> str:
+        return str(self.major) + "." + str(self.minor) + "." + str(self.patch) + "." + str(self.build)
+
     def __str__(self: Version) -> str:
         return self.version
 
@@ -72,7 +75,7 @@ class Version:
         if not isinstance(__value, Version):
             return False
 
-        return self.version == __value.version
+        return self.getFullVersion() == __value.getFullVersion()
 
     def __ne__(self: Version, __value: object) -> bool:
         return not self.__eq__(__value)
