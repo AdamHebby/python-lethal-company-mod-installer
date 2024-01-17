@@ -13,8 +13,11 @@ class Settings:
 
     modSettings: list[ModSetting] = []
 
+    _originalSettings: dict
+
     def __init__(self, dict: dict):
         settings: dict         = dict["settings"]
+        self._originalSettings = dict["settings"]
         self.configZipUrl      = str(settings["configZipUrl"])
         self.downloadUserAgent = str(settings["downloadUserAgent"])
         self.modDownloadUrl    = str(settings["modDownloadUrl"])
@@ -46,12 +49,6 @@ class Settings:
         return None
 
     def setModSetting(self: Settings, modSetting: ModSetting) -> None:
-        success("Updating " + modSetting.fullModName)
-        for updates in modSetting.updateLog:
-            print(f' - {updates}')
-
-        modSetting.updateLog.clear()
-
         for i in range(len(self.modSettings)):
             if self.modSettings[i].fullModName == modSetting.fullModName:
                 self.modSettings[i] = modSetting
@@ -111,6 +108,35 @@ class Settings:
             contents = open(path, "r")
 
         return Settings(yaml.load(contents, Loader=yaml.FullLoader))
+
+    def printDiff(self: Settings) -> None:
+        diffTo = self._originalSettings
+
+        for modSetting in self.modSettings:
+            isDiff = False
+            if modSetting.fullModName not in diffTo["mods"]:
+                isDiff = True
+                print(f'New Mod {modSetting.fullModName} ({modSetting.modVersion})')
+                continue
+
+            oldMod = diffTo["mods"][modSetting.fullModName]
+
+            if modSetting.modVersion.version != oldMod["version"]:
+                isDiff = True
+                print(f'New version for {modSetting.fullModName}: {oldMod["version"]} -> {modSetting.modVersion.version}')
+
+            if modSetting.modPathMap != oldMod["pathmap"]:
+                isDiff = True
+                print(f'New pathmap for {modSetting.fullModName}')
+                print("FROM: " + json.dumps(oldMod["pathmap"], indent=4))
+                print("TO:   " + json.dumps(modSetting.modPathMap, indent=4))
+
+            if "forcePin" in oldMod and modSetting.forcePin != oldMod["forcePin"]:
+                isDiff = True
+                print(f'New forcePin for {modSetting.fullModName}: {oldMod["forcePin"]} -> {modSetting.forcePin}')
+
+            if isDiff:
+                print()
 
     def saveToFile(self: Settings, path: str = "settings.yaml") -> None:
         with open(path, "w") as file:

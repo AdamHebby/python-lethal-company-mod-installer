@@ -42,7 +42,7 @@ class ModSettingPathMapper:
     @staticmethod
     def dumbExecute(mod: ModSetting) -> None:
         if mod.modName == "BepInExPack" or mod.modName == "FakeMod_BepInExPack":
-            mod.addPathMap(mod.modName, "/")
+            mod.addPathMap("/", "/")
             return
 
         # find all .cfg files in the mod folder and add them to the pathmap for /BepInEx/config/

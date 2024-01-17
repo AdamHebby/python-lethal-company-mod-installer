@@ -1,108 +1,196 @@
+from __future__ import annotations
+import json
 import os, sys, traceback
+import random
+import time
+from turtle import down
 
 from src.ModSettingPathMapper import ModSettingPathMapper
-from src.ModSetting import ModSetting
+from src.ModSetting import ModSetting, ModSettingManifest
 from src.Settings import Settings
 from src.Version import Version
-from src.Utils import error, getCurrentDir, loadPotentiallyDodgyJson, info, success, cleanTempFiles
+from src.Utils import error, loadPotentiallyDodgyJson, success, cleanTempFiles
 
-Current_Path = getCurrentDir()
+Current_Path = str(os.path.dirname(__file__))
+
+class DependencyManager:
+    _dependencies: dict[str, dict] = {}
+    settings: Settings
+
+    def __init__(self: DependencyManager, settings: Settings) -> None:
+        for mod in settings.modSettings:
+            self._dependencies[mod.fullModName] = {
+                "modName": mod.fullModName,
+                "modVersion": mod.modVersion.version,
+                "forcePin": mod.forcePin,
+            }
+
+    def downloadAllDependencies(self: DependencyManager) -> None:
+        self.downloadDependenciesRecursively(self._dependencies)
+
+    def downloadDependenciesRecursively(self: DependencyManager, dependencies: dict[str, dict]) -> None:
+        for dep in list(dependencies):
+            depObj = dependencies[dep]
+
+            mod = ModSetting(dep, Version(depObj["modVersion"]), [], depObj["forcePin"] if "forcePin" in depObj else None)
+
+            if mod.fullModName in self._dependencies and mod.forcePin == None and self._dependencies[mod.fullModName]["forcePin"] == None:
+                v = Version(self._dependencies[mod.fullModName]["modVersion"])
+
+                if v > mod.modVersion or v == mod.modVersion:
+                    continue
+
+            manifest = None
+            if not mod.hasDownloadFiles() or not mod.verify():
+                mod.download()
+
+            manifest = mod.getManifest()
+
+            if manifest == None:
+                error("Cannot find manifest.json for " + mod.fullModName)
+                continue
+
+            depObj["manifest"] = manifest
+
+            newDeps = self.getManifestDependencies(depObj)
+            for d in newDeps:
+                self.addDependency(newDeps[d])
+
+            self.downloadDependenciesRecursively(newDeps)
+
+    def getManifest(self: DependencyManager, mod: ModSetting) -> dict | None:
+        manifestPath = mod.findManifest()
+        if manifestPath == None:
+            error("Cannot find manifest.json for " + mod.fullModName)
+            return None
+
+        return loadPotentiallyDodgyJson(manifestPath)
+
+    def getManifestDependencies(self: DependencyManager, dependency: dict) -> dict[str, dict]:
+        if "manifest" not in dependency or dependency["manifest"] == None:
+            return {}
+
+        return self.listDependenciesInManifest(dependency["manifest"])
+
+    def addDependency(self: DependencyManager, mod: dict) -> None:
+        if mod["modName"] in self._dependencies:
+            if "forcePin" in self._dependencies[mod["modName"]] and self._dependencies[mod["modName"]]["forcePin"] != None:
+                return
+
+            if "forcePin" in mod and mod["forcePin"] != None:
+                self._dependencies[mod["modName"]] = mod
+                return
+
+            self._dependencies[mod["modName"]]["modVersion"] = Version.max(
+                Version(self._dependencies[mod["modName"]]["modVersion"]),
+                Version(mod["modVersion"])
+            ).version
+
+            return
+
+        self._dependencies[mod["modName"]] = mod
+
+    def listDependenciesInManifest(self: DependencyManager, manifest: ModSettingManifest) -> dict[str, dict]:
+        dependencies: dict[str, dict] = {}
+
+        if manifest == None or len(manifest.dependencies) == 0:
+            return dependencies
+
+        for dep in manifest.dependencies:
+            depParts = dep.split("-")
+            author   = depParts[0]
+            depName  = depParts[1]
+            version  = depParts[2]
+            fullName = author + "/" + depName
+
+            dependencies[fullName] = {
+                "modName": fullName,
+                "modVersion": version,
+                "forcePin": None,
+                "modDependencies": {},
+                "manifest": None
+            }
+
+        return dependencies
+
+    def update(self: DependencyManager) -> None:
+        downloadedNew = True
+
+        success("Checking for updates...")
+
+        for dep in self._dependencies:
+            depObj = self._dependencies[dep]
+
+            mod = ModSetting(dep, Version(depObj["modVersion"]), [], depObj["forcePin"] if "forcePin" in depObj else None)
+
+            latestVersion = mod.checkForNewVersion()
+
+            if latestVersion == None:
+                continue
+
+            mod.setNewVersion(latestVersion)
+            success("New version available for " + str(mod))
+
+            mod.downloadNewVersion()
+            mod.modPathMap = []
+            ModSettingPathMapper.dumbExecute(mod)
+
+            if not mod.verify():
+                error("Failed to verify " + mod.fullModName)
+                continue
+
+            success("Verified new version: " + str(mod))
+            self._dependencies[dep]["modVersion"] = latestVersion.version
+
+        self.downloadAllDependencies()
+
+    def toJSON(self: DependencyManager) -> dict:
+        return {
+            "dependencies": [self._dependencies[dep] for dep in self._dependencies]
+        }
 
 try:
     # settings path is argv[1], ensure param is entered and file exists
     settingsPath = ""
     if len(sys.argv) == 2:
         settingsPath = sys.argv[1]
-    elif not os.path.isfile(sys.argv[1]):
+    else:
         settingsPath = os.path.join(Current_Path, "settings.yaml")
 
     settings = Settings.loadFromFile(settingsPath)
 
-    suggests: dict[str, ModSetting] = {}
+    dependencyManager = DependencyManager(settings)
+    dependencyManager.downloadAllDependencies()
+    dependencyManager.update()
 
-    for mod in settings.modSettings:
-        info("Checking " + str(mod))
+    for modDependency in dependencyManager._dependencies:
+        dep = dependencyManager._dependencies[modDependency]
+        mod = ModSetting(
+            dep["modName"],
+            Version(dep["modVersion"]),
+            [],
+            dep["forcePin"] if "forcePin" in dep else None
+        )
 
-        if mod.forcePin != None:
-            print("Skipping pinned version " + mod.forcePin)
-            continue
+        if not mod.hasDownloadFiles() or not mod.verify():
+            mod.download()
 
-        latestVersion  = mod.checkForNewVersion()
-
-        if latestVersion != None:
-            success("New version available for " + mod.fullModName + " (" + str(latestVersion) + ")")
-            mod.setNewVersion(latestVersion)
-
-        mod.downloadNewVersion()
-        mod.modPathMap = []
         ModSettingPathMapper.dumbExecute(mod)
+
         mod.verifyThrow()
-        mod.applyNewVersion()
 
         settings.setModSetting(mod)
 
-        info("Checking manifest for " + mod.fullModName)
-        # find manifest.json within mod folder
-        manifestPath = mod.findManifest()
-        if manifestPath == None:
-            error("Cannot find manifest.json for " + mod.fullModName)
-            continue
-
-        try:
-            # Use subprocess.run with input and output pipes
-            manifest = loadPotentiallyDodgyJson(manifestPath)
-
-            if manifest != None and "dependencies" in manifest:
-                for dep in manifest["dependencies"]:
-                    depParts = dep.split("-")
-                    author   = depParts[0]
-                    depName  = depParts[1]
-                    version  = depParts[2]
-                    fullName = author + "/" + depName
-
-                    existingDependency = settings.getModSetting(fullName)
-                    newModDependency   = ModSetting(fullName, Version(version), [])
-
-                    if existingDependency != None and existingDependency.modVersion.lt(newModDependency.modVersion):
-                        error(
-                            f'Newer version of Dependency {fullName} ({existingDependency.modVersion} -> {newModDependency.modVersion}) ' +
-                            f'for {mod.fullModName} found in manifest.json'
-                        )
-                        continue
-
-                    if fullName in suggests:
-                        suggests[fullName].modVersion = Version.max(newModDependency.modVersion, suggests[fullName].modVersion)
-                    else:
-                        suggests[fullName] = newModDependency
-
-        except KeyError as e:
-            error("Error loading manifest.json for " + mod.fullModName)
-            error("ERROR:" + e.args[0])
-
-        print("")
-
-    for suggest in suggests:
-        newMod = suggests[suggest]
-
-        newMod.download()
-
-        ModSettingPathMapper.dumbExecute(newMod)
-
-        newMod.verifyThrow()
-
-        success("Adding " + newMod.fullModName + " " + str(newMod.modVersion) + " to settings")
-        settings.setModSetting(newMod)
-
-    # save settings.yaml
+    settings.printDiff()
     settings.saveToFile(settingsPath)
 
-    cleanTempFiles()
+    # cleanTempFiles()
 
     success("Done")
 
 except Exception as e:
     traceback.print_exc()
 
-    cleanTempFiles()
+    # cleanTempFiles()
 
     sys.exit()
