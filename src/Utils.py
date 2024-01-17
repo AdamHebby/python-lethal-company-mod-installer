@@ -126,21 +126,27 @@ def downloadZip(downloadUrl: str, path: str):
             time.sleep(5)
 
 def loadPotentiallyDodgyJson(path: str) -> dict | None:
-    result = subprocess.run(
-        f"cat {path} | jq",
-        shell=True,
-        executable="/bin/bash",
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE
-    )
+    if getattr(sys, 'frozen', False):
+        return json.load(open(path, "r"))
 
-    # Check for errors
-    if result.returncode == 0:
-        with open(path, 'w') as file:
-            file.write(result.stdout)
-    else:
-        error("JSON Error: " + result.stderr)
-        return None
+    try:
+        result = subprocess.run(
+            f"cat {path} | jq",
+            shell=True,
+            executable="/bin/bash",
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+
+        # Check for errors
+        if result.returncode == 0:
+            with open(path, 'w') as file:
+                file.write(result.stdout)
+        else:
+            error("JSON Error: " + result.stderr)
+            return None
+    except Exception as e:
+        pass
 
     return json.load(open(path, "r"))

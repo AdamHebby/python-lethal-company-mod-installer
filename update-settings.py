@@ -140,7 +140,11 @@ class DependencyManager:
                 success("Verified new version: " + str(mod))
                 self._dependencies[dep]["modVersion"] = latestVersion.version
 
+            before = self._dependencies.copy()
             self.downloadAllDependencies()
+
+            if before != self._dependencies:
+                downloadedNew = True
 
     def toJSON(self: DependencyManager) -> dict:
         return {
@@ -181,13 +185,13 @@ try:
     settings.printDiff()
     settings.saveToFile(settingsPath)
 
-    # cleanTempFiles()
+    cleanTempFiles()
 
     success("Done")
 
 except Exception as e:
     traceback.print_exc()
 
-    # cleanTempFiles()
+    cleanTempFiles()
 
     sys.exit()

@@ -1,5 +1,6 @@
 from __future__ import annotations
 import shutil
+import traceback
 from src.Version import Version
 from src.SessionConstants import SessionConstants
 from src.Utils import copyTree, findFile, downloadZip, loadPotentiallyDodgyJson, makeDirectory, success, warning, debug, info, yellow
@@ -193,6 +194,7 @@ class ModSetting:
                 return False
 
         except Exception as e:
+            traceback.print_exc()
             if not silent:
                 warning("Cannot verify " + self.fullModName + " - " + str(e))
 
@@ -205,7 +207,7 @@ class ModSetting:
 
     def getManifest(self: ModSetting) -> ModSettingManifest | None:
         manifestPath = self.findManifest()
-        if manifestPath == None:
+        if manifestPath == None or not os.path.exists(manifestPath):
             return None
 
         return ModSettingManifest.fromFile(manifestPath)

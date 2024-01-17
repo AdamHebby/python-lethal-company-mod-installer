@@ -1,6 +1,7 @@
 from __future__ import annotations
 import json
 import os, sys, tempfile, time, concurrent.futures, hashlib, traceback, winreg
+from src.SessionConstants import SessionConstants
 from src.InstallerManager import InstallerManager
 
 from src.Settings import Settings
@@ -10,6 +11,7 @@ from src.ModSetting import ModSetting
 from src.RegistryKey import RegistryKeyManager
 
 try:
+    SessionConstants.setLogLevel(SessionConstants.LOG_LEVEL_DEBUG)
     Current_Path    = getCurrentDir()
 
     # Define constants
@@ -148,6 +150,7 @@ try:
             except Exception as e:
                 error("Error downloading + verifying " + mod.fullModName + " - " + str(e))
                 info("Retrying in 5 seconds...")
+                traceback.print_exc()
                 time.sleep(5)
 
         if not verified:
