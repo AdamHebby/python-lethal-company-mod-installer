@@ -2,7 +2,7 @@ from __future__ import annotations
 import shutil
 from src.Version import Version
 from src.SessionConstants import SessionConstants
-from src.Utils import copyTree, findFile, downloadZip, loadPotentiallyDodgyJson, makeDirectory, warning, info, yellow
+from src.Utils import copyTree, findFile, downloadZip, loadPotentiallyDodgyJson, makeDirectory, success, warning, debug, info, yellow
 import os, requests, re
 
 class ModSettingManifest:
@@ -114,7 +114,7 @@ class ModSetting:
         info("Downloading " + self.fullModName + " " + version)
 
         if os.path.exists(SessionConstants.TEMP_DIR + self.modName):
-            print("debug: skipping download of " + self.modName + " - already exists")
+            debug("skipping download of " + self.modName + " - already exists")
             return
 
         downloadZip(
@@ -137,13 +137,13 @@ class ModSetting:
         )
 
         if latestVersion == None:
-            print("NO VERSION FOUND FOR " + self.fullModName)
+            warning("Could not find any version for  " + self.fullModName)
             return None
 
         latestVersion = Version(str(latestVersion.group(1)))
 
         if latestVersion.gt(self.modVersion):
-            print("NEW VERSION FOUND FOR " + self.fullModName + f" - {self.modVersion} ({self.newModVersion}) -> {latestVersion}")
+            success("New version available for " + self.fullModName + " - " + latestVersion.version)
             return latestVersion
 
         return None
@@ -158,9 +158,11 @@ class ModSetting:
         if not self.verify():
             raise Exception("Error downloading " + self.modName + " - Incomplete")
 
-    def verify(self: ModSetting) -> bool:
+    def verify(self: ModSetting, silent: bool = False) -> bool:
         if not self.hasDownloadFiles():
-            warning("Cannot verify " + self.fullModName + " - Incomplete")
+            if not silent:
+                warning("Cannot verify " + self.fullModName + " - Incomplete")
+
             return False
 
         for pmap in self.modPathMap:
@@ -168,7 +170,9 @@ class ModSetting:
             copyFrom = SessionConstants.TEMP_DIR + self.modName + "/" + copyMap[0]
 
             if not os.path.exists(copyFrom) or (os.path.isdir(copyFrom) and len(os.listdir(copyFrom)) == 0):
-                warning("Cannot verify " + self.fullModName + " - Missing or empty " + copyFrom)
+                if not silent:
+                    warning("Cannot verify " + self.fullModName + " - Missing or empty " + copyFrom)
+
                 return False
 
         if self.modDoesNotContainManifest():
@@ -177,15 +181,21 @@ class ModSetting:
         try:
             manifest = self.getManifest()
             if manifest == None:
-                warning("Cannot verify " + self.fullModName + " - Missing manifest.json")
+                if not silent:
+                    warning("Cannot verify " + self.fullModName + " - Missing manifest.json")
+
                 return False
 
             if manifest.version != self.modVersion and manifest.version != self.newModVersion and self.forcePin == None:
-                warning("Cannot verify " + self.fullModName + " - Invalid version in manifest.json")
+                if not silent:
+                    warning("Cannot verify " + self.fullModName + " - Invalid version in manifest.json")
+
                 return False
 
         except Exception as e:
-            warning("Cannot verify " + self.fullModName + " - " + str(e))
+            if not silent:
+                warning("Cannot verify " + self.fullModName + " - " + str(e))
+
             return False
 
         return True
@@ -196,7 +206,6 @@ class ModSetting:
     def getManifest(self: ModSetting) -> ModSettingManifest | None:
         manifestPath = self.findManifest()
         if manifestPath == None:
-            warning("Cannot find manifest.json for " + self.fullModName)
             return None
 
         return ModSettingManifest.fromFile(manifestPath)

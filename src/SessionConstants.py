@@ -20,3 +20,14 @@ class SessionConstants:
         "LICENSE",
         "icon.png",
     ]
+
+    LOG_LEVEL_DEBUG: int = 0
+    LOG_LEVEL_INFO: int = 1
+    LOG_LEVEL_WARNING: int = 2
+    LOG_LEVEL_ERROR: int = 3
+
+    LOG_LEVEL: int = LOG_LEVEL_ERROR
+
+    @staticmethod
+    def setLogLevel(level: int) -> None:
+        SessionConstants.LOG_LEVEL = level

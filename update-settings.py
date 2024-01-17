@@ -26,6 +26,7 @@ class DependencyManager:
             }
 
     def downloadAllDependencies(self: DependencyManager) -> None:
+        success("Downloading ALL dependencies...")
         self.downloadDependenciesRecursively(self._dependencies)
 
     def downloadDependenciesRecursively(self: DependencyManager, dependencies: dict[str, dict]) -> None:
@@ -37,17 +38,16 @@ class DependencyManager:
             if mod.fullModName in self._dependencies and mod.forcePin == None and self._dependencies[mod.fullModName]["forcePin"] == None:
                 v = Version(self._dependencies[mod.fullModName]["modVersion"])
 
-                if v > mod.modVersion or v == mod.modVersion:
+                if v > mod.modVersion and mod.hasDownloadFiles() and mod.verify(True):
                     continue
 
             manifest = None
-            if not mod.hasDownloadFiles() or not mod.verify():
+            if not mod.hasDownloadFiles() or not mod.verify(True):
                 mod.download()
 
             manifest = mod.getManifest()
 
             if manifest == None:
-                error("Cannot find manifest.json for " + mod.fullModName)
                 continue
 
             depObj["manifest"] = manifest
@@ -57,14 +57,6 @@ class DependencyManager:
                 self.addDependency(newDeps[d])
 
             self.downloadDependenciesRecursively(newDeps)
-
-    def getManifest(self: DependencyManager, mod: ModSetting) -> dict | None:
-        manifestPath = mod.findManifest()
-        if manifestPath == None:
-            error("Cannot find manifest.json for " + mod.fullModName)
-            return None
-
-        return loadPotentiallyDodgyJson(manifestPath)
 
     def getManifestDependencies(self: DependencyManager, dependency: dict) -> dict[str, dict]:
         if "manifest" not in dependency or dependency["manifest"] == None:
@@ -115,34 +107,40 @@ class DependencyManager:
 
     def update(self: DependencyManager) -> None:
         downloadedNew = True
+        success("Checking for mod updates...")
 
-        success("Checking for updates...")
+        while downloadedNew:
+            downloadedNew = False
 
-        for dep in self._dependencies:
-            depObj = self._dependencies[dep]
+            if downloadedNew:
+                success("New mods required, checking new mods for updates...")
 
-            mod = ModSetting(dep, Version(depObj["modVersion"]), [], depObj["forcePin"] if "forcePin" in depObj else None)
+            for dep in self._dependencies:
+                depObj = self._dependencies[dep]
 
-            latestVersion = mod.checkForNewVersion()
+                mod = ModSetting(dep, Version(depObj["modVersion"]), [], depObj["forcePin"] if "forcePin" in depObj else None)
 
-            if latestVersion == None:
-                continue
+                latestVersion = mod.checkForNewVersion()
 
-            mod.setNewVersion(latestVersion)
-            success("New version available for " + str(mod))
+                if latestVersion == None:
+                    continue
 
-            mod.downloadNewVersion()
-            mod.modPathMap = []
-            ModSettingPathMapper.dumbExecute(mod)
+                mod.setNewVersion(latestVersion)
 
-            if not mod.verify():
-                error("Failed to verify " + mod.fullModName)
-                continue
+                mod.downloadNewVersion()
+                mod.modPathMap = []
+                ModSettingPathMapper.dumbExecute(mod)
 
-            success("Verified new version: " + str(mod))
-            self._dependencies[dep]["modVersion"] = latestVersion.version
+                if not mod.verify():
+                    error("Failed to verify " + mod.fullModName)
+                    continue
 
-        self.downloadAllDependencies()
+                downloadedNew = True
+
+                success("Verified new version: " + str(mod))
+                self._dependencies[dep]["modVersion"] = latestVersion.version
+
+            self.downloadAllDependencies()
 
     def toJSON(self: DependencyManager) -> dict:
         return {
@@ -160,7 +158,6 @@ try:
     settings = Settings.loadFromFile(settingsPath)
 
     dependencyManager = DependencyManager(settings)
-    dependencyManager.downloadAllDependencies()
     dependencyManager.update()
 
     for modDependency in dependencyManager._dependencies:

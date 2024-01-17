@@ -15,14 +15,21 @@ def yellow(msg: str) -> str:
 def cyan(msg: str) -> str:
     return colorama.Fore.CYAN + msg + colorama.Style.RESET_ALL
 
+def debug(msg: str):
+    if SessionConstants.LOG_LEVEL <= SessionConstants.LOG_LEVEL_DEBUG:
+        print(msg)
+
 def error(msg: str):
-    print(red(msg))
+    if SessionConstants.LOG_LEVEL <= SessionConstants.LOG_LEVEL_ERROR:
+        print(red(msg))
 
 def warning(msg: str):
-    print(yellow(msg))
+    if SessionConstants.LOG_LEVEL <= SessionConstants.LOG_LEVEL_WARNING:
+        print(yellow(msg))
 
 def info(msg: str):
-    print(cyan(msg))
+    if SessionConstants.LOG_LEVEL <= SessionConstants.LOG_LEVEL_INFO:
+        print(cyan(msg))
 
 def success(msg: str):
     print(green(msg))
@@ -133,7 +140,7 @@ def loadPotentiallyDodgyJson(path: str) -> dict | None:
         with open(path, 'w') as file:
             file.write(result.stdout)
     else:
-        print("JSON Error:", result.stderr)
+        error("JSON Error: " + result.stderr)
         return None
 
     return json.load(open(path, "r"))
